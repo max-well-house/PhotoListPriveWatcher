@@ -1,0 +1,24 @@
+[
+  {
+    "id": "sample-text-001",
+    "name": "pajamas",
+    "list_owner": "Kid A",
+    "priority": 2,
+    "type": "text",
+    "notes": "soft cotton preferred — black / large",
+    "status": "wanted",
+    "amazon_price": null,
+    "amazon_url": null
+  },
+  {
+    "id": "sample-tracked-001",
+    "name": "Example tracked item",
+    "list_owner": "Me",
+    "priority": 1,
+    "type": "tracked",
+    "notes": "demo row for worker refresh",
+    "status": "wanted",
+    "amazon_price": "19.99",
+    "amazon_url": "https://www.amazon.com/dp/B0D1XD1ZV3"
+  }
+]

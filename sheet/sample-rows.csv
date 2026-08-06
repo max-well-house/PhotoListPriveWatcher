@@ -1,0 +1,3 @@
+id,photo,name,list_owner,priority,type,size,color,qty,notes,status,stores,amazon_price,amazon_url,target_price,target_url,walmart_price,walmart_url,last_checked,upc,asin,hot
+sample-text-001,,pajamas,Kid A,2,text,large,black,2,soft cotton preferred,wanted,,,,,,,,,,
+sample-tracked-001,,Example tracked item (replace URL),Me,1,tracked,,,1,demo row for worker refresh,wanted,amazon,,https://www.amazon.com/dp/B0D1XD1ZV3,,,,,,B0D1XD1ZV3,

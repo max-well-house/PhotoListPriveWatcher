@@ -2,10 +2,9 @@
 .env
 .env.*
 !.env.example
-
-# Local data
-data/*
-!data/.gitkeep
+**/credentials*.json
+**/service-account*.json
+*-sa.json
 
 # Python
 __pycache__/
@@ -15,11 +14,12 @@ __pycache__/
 venv/
 dist/
 build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Node
+# Node / misc
 node_modules/
-npm-debug.log*
-dist/
 
 # IDE / OS
 .idea/
@@ -28,6 +28,14 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs / local data
 *.log
 logs/
+data/
+.worker-cache/
+
+# Xcode
+ios/**/xcuserdata/
+ios/**/*.xcuserstate
+DerivedData/
+*.xccheckout
