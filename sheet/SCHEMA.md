@@ -6,7 +6,7 @@ Source of truth for Family Price Tracker. Two tabs: **Items** and **Config**.
 
 | Column | Key | Notes |
 |---|---|---|
-| A | `id` | Stable UUID string |
+| A | `id` | Stable UUID string — mint once on create (`uuid4`); never rewrite (see Decision #006) |
 | B | `photo` | URL or blank (Drive later) |
 | C | `name` | Product or text ask |
 | D | `list_owner` | Must match Config list owners |
@@ -52,6 +52,19 @@ So column names stay visible while scrolling:
 3. On mobile Sheets: open the sheet → tap the sheet menu → **View** → **Freeze** → **1 row**.
 
 Frozen headers and HYPERLINK cells open correctly in the Google Sheets app on phone; relatives can tap a price to open the store URL in the browser.
+
+### Conditional formatting by priority
+
+Make high-priority rows obvious for relatives (desktop Sheets):
+
+1. Select the Items data range (e.g. `A2:V` or the whole used range).
+2. **Format → Conditional formatting**.
+3. Add a rule: **Custom formula is** `=$E2=1` → strong fill (e.g. light red / pink).
+4. Add a second rule: **Custom formula is** `=$E2=2` → softer fill (e.g. light orange).
+5. Apply to the same range; keep priority **1** above **2** so both don’t fight.
+
+Priority column is E (`priority`, 1 = highest). Mobile Sheets shows the colors; editing rules is easier on desktop.
+
 ## Config tab
 
 ### List owners (column A header `list_owner`)

@@ -24,6 +24,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Refresh all wanted tracked items",
     )
+    p_refresh.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Fetch and print would-write values; do not update the Sheet",
+    )
 
     p_add = sub.add_parser("add-tracked", help="Append a tracked item with Amazon URL")
     p_add.add_argument("--url", required=True)
@@ -43,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "list-items":
         return refresh.cmd_list_items()
     if args.cmd == "refresh":
-        return refresh.cmd_refresh(args.item, args.due)
+        return refresh.cmd_refresh(args.item, args.due, dry_run=args.dry_run)
     if args.cmd == "add-tracked":
         return refresh.cmd_add_tracked(
             args.url,

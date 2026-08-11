@@ -33,3 +33,11 @@ Product matching prefers barcode/UPC and on-device or self-hosted approaches. Pa
 - List owners live on a **Config** tab (default: Me, Spouse, Kid A, Kid B, Shared).
 - Status: `wanted` | `purchased` | `dropped`.
 - Item type: `tracked` | `text`.
+
+## Decision #006 — Stable item ids (UUID)
+
+- New rows (worker `add-tracked`, future iOS create) mint **`id` = `uuid.uuid4()` string** once at insert.
+- Never rewrite `id` on edit or refresh; Sheet row identity is the UUID, not the row number.
+- Sample CSV may use readable demo ids (`sample-text-001`); production rows use real UUIDs.
+
+**Why:** Worker and iOS need a stable key across sorts, inserts, and price updates without clobbering notes/priority.

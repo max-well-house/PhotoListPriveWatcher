@@ -11,7 +11,13 @@ from family_price_tracker.sheets import SheetsClient
 log = logging.getLogger(__name__)
 
 
-def refresh_item(client: SheetsClient, item: Item, settings: Settings) -> list[str]:
+def refresh_item(
+    client: SheetsClient,
+    item: Item,
+    settings: Settings,
+    *,
+    dry_run: bool = False,
+) -> list[str]:
     load_builtin_fetchers()
     errors: list[str] = []
     stores = item.store_keys() or (["amazon"] if item.amazon_url else [])
@@ -41,8 +47,21 @@ def refresh_item(client: SheetsClient, item: Item, settings: Settings) -> list[s
             continue
         assert isinstance(result, PriceResult)
         if store == "amazon":
-            client.update_amazon_price(item, result.price, result.url)
-            log.info("Updated %s amazon → %s (%s)", item.id, result.price, result.url)
+            if dry_run:
+                print(
+                    f"dry-run would write\t{item.id}\tamazon\t"
+                    f"price={result.price}\turl={result.url}"
+                )
+                log.info(
+                    "dry-run: skip Sheet write for %s amazon → %s",
+                    item.id,
+                    result.price,
+                )
+            else:
+                client.update_amazon_price(item, result.price, result.url)
+                log.info(
+                    "Updated %s amazon → %s (%s)", item.id, result.price, result.url
+                )
         else:
             errors.append(f"{item.id}/{store}: write-back not implemented yet")
     return errors
@@ -95,7 +114,7 @@ def cmd_list_items() -> int:
     return 0
 
 
-def cmd_refresh(item_id: str | None, due: bool) -> int:
+def cmd_refresh(item_id: str | None, due: bool, dry_run: bool = False) -> int:
     settings = load_settings()
     client = SheetsClient(settings)
     items = client.list_items()
@@ -112,13 +131,13 @@ def cmd_refresh(item_id: str | None, due: bool) -> int:
 
     all_errors: list[str] = []
     for item in targets:
-        all_errors.extend(refresh_item(client, item, settings))
+        all_errors.extend(refresh_item(client, item, settings, dry_run=dry_run))
     if all_errors:
         print(f"Completed with {len(all_errors)} error(s)")
         for e in all_errors:
             print(f"  - {e}")
         return 1
-    print("OK")
+    print("OK" + (" (dry-run, no Sheet writes)" if dry_run else ""))
     return 0
 
 
@@ -146,10 +165,16 @@ def cmd_add_tracked(
     return 0
 
 
+# Sample Amazon product page for manual / doctor checks. Expect breakage when
+# Amazon changes HTML; prefer unit tests on saved HTML over live fetches.
+AMAZON_FIXTURE_URL = "https://www.amazon.com/dp/B0D1XD1ZV3"
+
+
 def cmd_doctor() -> int:
     load_builtin_fetchers()
     from family_price_tracker.fetchers import all_fetchers
 
     print("Registered fetchers:", ", ".join(sorted(all_fetchers())) or "(none)")
-    print("doctor: use refresh --item against a real URL to validate Amazon parsing.")
+    print(f"Amazon fixture URL (may break): {AMAZON_FIXTURE_URL}")
+    print("doctor: use refresh --item / --dry-run against a real Sheet row to validate.")
     return 0

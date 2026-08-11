@@ -21,3 +21,11 @@ This project is for **personal / family use** on a shared wishlist. It is not a 
 - Fail the item/store with a typed error (`selector_broken`, `http_error`, `not_found`).
 - Log enough context to fix (URL, status code, which parser path).
 - Leave prior price in the Sheet until a successful refresh (do not blank on failure unless explicitly requested).
+
+## Fixture URL (manual only)
+
+Sample Amazon product used in `sheet/sample-rows.csv` and `worker` docs:
+
+`https://www.amazon.com/dp/B0D1XD1ZV3`
+
+It is **not** a stable contract — Amazon may change the page or block automated fetches. Unit tests should use saved HTML fixtures; live `refresh` / `doctor` against this URL is optional smoke only.

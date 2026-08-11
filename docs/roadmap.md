@@ -35,7 +35,7 @@ Then **v0.5.0** iOS read-only when a Mac is available.
 - **v1.1.0 Scheduled refresh** — weekly / hot daily
 - **v1.2.0 Custom stores** — YouTuber merch URLs
 - **v1.3.0 More retailers** — tools/outdoors/clothing as needed
-- **Up next (v0.4 polish)** — quick ships between foundation and CRUD
+- **Up next (v0.4 polish)** — dry-run, UUID docs, fixture URL, priority formatting — **done** (2026-08-11)
 - **Unplanned** — history, deals, zip pricing, Android (non-goals / later)
 
 See GitHub **Milestones** and **Issues** for Goal / Acceptance criteria detail.
