@@ -11,8 +11,12 @@
    - `SHEET_ID`
    - `GOOGLE_APPLICATION_CREDENTIALS` → path to the JSON key
 
-Smoke test from `worker/`:
+### Manual smoke (real Sheet)
+
+With venv active and `PYTHONPATH=src` (or the package installed editable), from `worker/`:
 
 ```bash
 python -m family_price_tracker list-items
 ```
+
+Expect one line per Items row with a non-empty `id` (id, priority, type, list_owner, name, amazon price). This proves service-account credentials and Sheet access without fetching retailer prices.

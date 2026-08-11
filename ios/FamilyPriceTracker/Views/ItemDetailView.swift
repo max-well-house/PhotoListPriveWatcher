@@ -20,11 +20,15 @@ struct ItemDetailView: View {
                         HStack {
                             Text("Amazon")
                             Spacer()
-                            Text(item.amazonPrice.map { "$\($0)" } ?? "Open")
+                            if let price = item.amazonPrice, !price.isEmpty {
+                                Text("$\(price)")
+                            } else {
+                                Text("Open")
+                            }
                         }
                     }
                 } else {
-                    Text("No store links yet")
+                    Text("Not checked")
                         .foregroundStyle(.secondary)
                 }
             }

@@ -4,16 +4,18 @@ SwiftUI client for the two primary users. **Requires a Mac + Xcode** to build.
 
 ## Status
 
-Scaffold only: models + list/detail UI against a local sample JSON so the project structure is clear on Windows too. Wire Google Sign-In + Sheets API on a Mac (see research issue on the board / [docs/ios-distribution.md](../docs/ios-distribution.md)).
+Read-only list + detail UI against a **documented sample JSON stub** (`Resources/sample_items.json` via `SampleSheetClient`). That satisfies the v0.5.0 list/detail milestone until Google Sign-In is wired on a Mac.
 
-## Planned structure
+Live Sheet access: follow the research note in [docs/ios-distribution.md](../docs/ios-distribution.md) (OAuth, iOS client ID, readonly Sheets scope). Swap `SampleSheetClient` for a Sheets-backed `SheetClient` — do not embed the worker service-account JSON.
+
+## Structure
 
 ```
 FamilyPriceTracker/
   Models/Item.swift
   Views/ItemListView.swift
   Views/ItemDetailView.swift
-  Services/SheetClient.swift   # TODO: Google Sheets API
+  Services/SheetClient.swift   # SampleSheetClient stub; OAuth Sheets later
   Resources/sample_items.json
   FamilyPriceTrackerApp.swift
 ```

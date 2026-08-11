@@ -1,8 +1,15 @@
 import SwiftUI
 
 struct ItemListView: View {
-    @State private var items: [WishlistItem] = SampleData.load()
+    private let client: SheetClient
+    @State private var items: [WishlistItem] = []
     @State private var ownerFilter: String = "All"
+    @State private var loadError: String?
+    @State private var didLoad = false
+
+    init(client: SheetClient = SampleSheetClient()) {
+        self.client = client
+    }
 
     private var owners: [String] {
         let set = Set(items.map(\.listOwner))
@@ -16,16 +23,36 @@ struct ItemListView: View {
 
     var body: some View {
         NavigationStack {
-            List(filtered) { item in
-                NavigationLink(value: item) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.name).font(.headline)
-                        Text("P\(item.priority) · \(item.listOwner) · \(item.type)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        if let price = item.amazonPrice, !price.isEmpty {
-                            Text("Amazon $\(price)")
-                                .font(.subheadline)
+            Group {
+                if let loadError {
+                    ContentUnavailableView(
+                        "Couldn’t load wishlist",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text(loadError)
+                    )
+                } else if didLoad && filtered.isEmpty {
+                    ContentUnavailableView(
+                        "No items",
+                        systemImage: "list.bullet",
+                        description: Text(
+                            ownerFilter == "All"
+                                ? "Add items in the Google Sheet, then refresh."
+                                : "No items for this list. Try All or another owner."
+                        )
+                    )
+                } else {
+                    List(filtered) { item in
+                        NavigationLink(value: item) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.name).font(.headline)
+                                Text("P\(item.priority) · \(item.listOwner) · \(item.type)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                if let price = item.amazonPrice, !price.isEmpty {
+                                    Text("Amazon $\(price)")
+                                        .font(.subheadline)
+                                }
+                            }
                         }
                     }
                 }
@@ -42,44 +69,27 @@ struct ItemListView: View {
                 }
             }
             .refreshable {
-                items = SampleData.load()
+                reload()
+            }
+            .task {
+                if !didLoad {
+                    reload()
+                }
             }
         }
     }
-}
 
-enum SampleData {
-    static func load() -> [WishlistItem] {
-        guard
-            let url = Bundle.main.url(forResource: "sample_items", withExtension: "json"),
-            let data = try? Data(contentsOf: url),
-            let decoded = try? JSONDecoder().decode([WishlistItem].self, from: data)
-        else {
-            return [
-                WishlistItem(
-                    id: "sample-text-001",
-                    name: "pajamas",
-                    listOwner: "Kid A",
-                    priority: 2,
-                    type: "text",
-                    notes: "soft cotton preferred",
-                    status: "wanted",
-                    amazonPrice: nil,
-                    amazonURL: nil
-                ),
-                WishlistItem(
-                    id: "sample-tracked-001",
-                    name: "Example tracked item",
-                    listOwner: "Me",
-                    priority: 1,
-                    type: "tracked",
-                    notes: "demo row",
-                    status: "wanted",
-                    amazonPrice: "19.99",
-                    amazonURL: "https://www.amazon.com/dp/B0D1XD1ZV3"
-                ),
-            ]
+    private func reload() {
+        do {
+            items = try client.fetchItems()
+            loadError = nil
+        } catch let error as SheetClientError {
+            items = []
+            loadError = error.errorDescription
+        } catch {
+            items = []
+            loadError = "Could not load wishlist."
         }
-        return decoded
+        didLoad = true
     }
 }

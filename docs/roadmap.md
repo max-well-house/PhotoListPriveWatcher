@@ -21,12 +21,12 @@ Then **v0.5.0** iOS read-only when a Mac is available.
 
 ## Milestone summaries
 
-- **v0.0.1 Repo + vision** — layout, vision/roadmap/decisions, legal, LICENSE
-- **v0.1.0 Sheet schema** — Items/Config tabs, sample CSV
-- **v0.2.0 Worker skeleton** — package, config, fetcher protocol
-- **v0.3.0 Sheets sync foundation** — SA read/write, `list-items`
-- **v0.4.0 Vertical slice** — Amazon fetcher, `refresh`, `add-tracked`
-- **v0.5.0 iOS read-only list** — SwiftUI list + tappable prices
+- **v0.0.1 Repo + vision** — layout, vision/roadmap/decisions, legal, LICENSE — **done**
+- **v0.1.0 Sheet schema** — Items/Config tabs, sample CSV, formatting guide — **done** (2026-08-11)
+- **v0.2.0 Worker skeleton** — package, config, fetcher protocol — **done**
+- **v0.3.0 Sheets sync foundation** — SA read/write, `list-items` — **done** (2026-08-11)
+- **v0.4.0 Vertical slice** — Amazon fetcher, `refresh`, `add-tracked` — **done**
+- **v0.5.0 iOS read-only list** — SwiftUI list + tappable prices (sample stub + Sign-In research) — **done** (2026-08-11)
 - **v0.6.0 Text items + lists + priority** — app CRUD for text asks
 - **v0.7.0 Add via URL + manual stores** — per-item store checklist
 - **v0.8.0 Target + Walmart** — next fetchers + `doctor` CLI

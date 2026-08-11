@@ -23,13 +23,13 @@ See [../docs/setup-google.md](../docs/setup-google.md).
 ```powershell
 # From worker/ with PYTHONPATH or installed editable:
 $env:PYTHONPATH = "src"
+# Manual smoke against a real Sheet (creds only; no price fetch):
 python -m family_price_tracker list-items
 python -m family_price_tracker add-tracked --url "https://www.amazon.com/dp/B0..." --name "Thing" --notes "black" --priority 2 --list Me
 python -m family_price_tracker refresh --item <id>
 python -m family_price_tracker refresh --due
 python -m family_price_tracker doctor
 ```
-
 ## Legal
 
 Fetchers are best-effort for personal/family use. See [../docs/scraping-and-legal.md](../docs/scraping-and-legal.md).

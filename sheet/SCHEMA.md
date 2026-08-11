@@ -29,16 +29,29 @@ Source of truth for Family Price Tracker. Two tabs: **Items** and **Config**.
 | U | `asin` | Optional Amazon ASIN |
 | V | `hot` | `yes` for daily refresh later; blank = weekly |
 
-### Hyperlink tip
+## Formatting (relatives / phone Sheet)
 
-In Google Sheets you can show a clickable price with:
+Workers and the iOS app use separate `amazon_price` + `amazon_url` columns. For relatives viewing the Sheet itself:
+
+### Clickable price (HYPERLINK)
+
+In an empty helper column (or replace the price display cell), show a tappable price:
 
 ```
 =HYPERLINK(N2, "$" & TEXT(M2, "0.00"))
 ```
 
-Or keep price + URL in separate columns (app uses both).
+Copy down for each row. Or keep price + URL in separate columns (app uses both).
 
+### Freeze header row
+
+So column names stay visible while scrolling:
+
+1. Select row 1 (or click the Items tab with the header selected).
+2. **View → Freeze → 1 row** (on desktop Sheets).
+3. On mobile Sheets: open the sheet → tap the sheet menu → **View** → **Freeze** → **1 row**.
+
+Frozen headers and HYPERLINK cells open correctly in the Google Sheets app on phone; relatives can tap a price to open the store URL in the browser.
 ## Config tab
 
 ### List owners (column A header `list_owner`)
