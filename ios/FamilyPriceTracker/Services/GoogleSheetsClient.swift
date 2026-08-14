@@ -86,6 +86,27 @@ final class GoogleSheetsClient: SheetClient {
         return owners
     }
 
+    func fetchStores() async throws -> [StoreDirectoryEntry] {
+        let rows = try await values(range: "'\(config.configTab)'!C:E")
+        var stores: [StoreDirectoryEntry] = []
+        for (index, row) in rows.enumerated() {
+            let key = Self.cell(row, 0).lowercased()
+            if index == 0, key == "store_key" { continue }
+            if key.isEmpty { continue }
+            let name = Self.cell(row, 1)
+            let enabledRaw = Self.cell(row, 2).lowercased()
+            let enabled = enabledRaw == "yes" || enabledRaw == "true" || enabledRaw == "1"
+            stores.append(
+                StoreDirectoryEntry(
+                    storeKey: key,
+                    displayName: name.isEmpty ? key : name,
+                    enabled: enabled
+                )
+            )
+        }
+        return stores
+    }
+
     func createTextItem(
         name: String,
         notes: String,
@@ -115,22 +136,88 @@ final class GoogleSheetsClient: SheetClient {
         return created
     }
 
+    func createTrackedItem(
+        name: String,
+        notes: String,
+        priority: Int,
+        listOwner: String,
+        storeKeys: [String],
+        amazonURL: String?,
+        targetURL: String?,
+        walmartURL: String?
+    ) async throws -> WishlistItem {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw SheetClientError.invalidItem("Name is required.")
+        }
+        try await requireOwner(listOwner)
+        if let message = StoreURL.invalidURLMessage(
+            amazonURL: amazonURL,
+            targetURL: targetURL,
+            walmartURL: walmartURL
+        ) {
+            throw SheetClientError.invalidItem(message)
+        }
+        let created = WishlistItem.makeTracked(
+            name: trimmed,
+            notes: notes,
+            priority: priority,
+            listOwner: listOwner,
+            storeKeys: storeKeys,
+            amazonURL: amazonURL,
+            targetURL: targetURL,
+            walmartURL: walmartURL
+        )
+        guard created.hasAnyStoreURL, !created.storeKeys.isEmpty else {
+            throw SheetClientError.invalidItem("Pick at least one store and paste a product URL.")
+        }
+        var row = Array(repeating: "", count: SheetsRuntimeConfig.itemsHeaders.count)
+        row[0] = created.id
+        row[2] = created.name
+        row[3] = created.listOwner
+        row[4] = String(created.priority)
+        row[5] = created.type
+        row[9] = created.notes
+        row[10] = created.status
+        row[11] = created.stores
+        row[13] = created.amazonURL ?? ""
+        row[15] = created.targetURL ?? ""
+        row[17] = created.walmartURL ?? ""
+        try await append(row: row)
+        return created
+    }
+
     func updateItem(_ item: WishlistItem) async throws {
         try await requireOwner(item.listOwner)
         guard ItemStatus(rawValue: item.status) != nil else {
             throw SheetClientError.invalidItem("Status must be wanted, purchased, or dropped.")
+        }
+        if let message = StoreURL.invalidURLMessage(
+            amazonURL: item.amazonURL,
+            targetURL: item.targetURL,
+            walmartURL: item.walmartURL
+        ) {
+            throw SheetClientError.invalidItem(message)
         }
         guard let rowIndex = try await rowIndex(for: item.id) else {
             throw SheetClientError.notFound(item.id)
         }
         let tab = config.itemsTab
         let priority = ItemPriority.clamp(item.priority)
-        // D list_owner, E priority, J notes, K status — never rewrite id.
+        let type = (item.type == "tracked" || item.hasAnyStoreURL) ? "tracked" : item.type
+        let stores = StoreURL.encode(item.storeKeys)
+        // D list_owner, E priority, F type, J notes, K status, L stores,
+        // N/P/R URLs — never rewrite id or worker-owned prices.
         try await batchUpdate([
             ("'\(tab)'!D\(rowIndex)", item.listOwner),
             ("'\(tab)'!E\(rowIndex)", String(priority)),
+            ("'\(tab)'!F\(rowIndex)", type),
             ("'\(tab)'!J\(rowIndex)", item.notes),
             ("'\(tab)'!K\(rowIndex)", item.status),
+            ("'\(tab)'!L\(rowIndex)", stores),
+            ("'\(tab)'!N\(rowIndex)", item.amazonURL ?? ""),
+            ("'\(tab)'!P\(rowIndex)", item.targetURL ?? ""),
+            ("'\(tab)'!R\(rowIndex)", item.walmartURL ?? ""),
         ])
     }
 
@@ -158,6 +245,10 @@ final class GoogleSheetsClient: SheetClient {
         let priority = ItemPriority.clamp(Int(priorityRaw) ?? ItemPriority.default)
         let amazonPrice = cell(row, 12)
         let amazonURL = cell(row, 13)
+        let targetPrice = cell(row, 14)
+        let targetURL = cell(row, 15)
+        let walmartPrice = cell(row, 16)
+        let walmartURL = cell(row, 17)
         return WishlistItem(
             id: id,
             name: cell(row, 2),
@@ -166,8 +257,13 @@ final class GoogleSheetsClient: SheetClient {
             type: cell(row, 5).isEmpty ? "text" : cell(row, 5),
             notes: cell(row, 9),
             status: cell(row, 10).isEmpty ? ItemStatus.wanted.rawValue : cell(row, 10),
+            stores: cell(row, 11),
             amazonPrice: amazonPrice.isEmpty ? nil : amazonPrice,
-            amazonURL: amazonURL.isEmpty ? nil : amazonURL
+            amazonURL: amazonURL.isEmpty ? nil : amazonURL,
+            targetPrice: targetPrice.isEmpty ? nil : targetPrice,
+            targetURL: targetURL.isEmpty ? nil : targetURL,
+            walmartPrice: walmartPrice.isEmpty ? nil : walmartPrice,
+            walmartURL: walmartURL.isEmpty ? nil : walmartURL
         )
     }
 

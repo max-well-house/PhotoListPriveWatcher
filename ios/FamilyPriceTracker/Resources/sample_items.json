@@ -7,8 +7,13 @@
     "type": "text",
     "notes": "soft cotton preferred — black / large",
     "status": "wanted",
+    "stores": "",
     "amazon_price": null,
-    "amazon_url": null
+    "amazon_url": null,
+    "target_price": null,
+    "target_url": null,
+    "walmart_price": null,
+    "walmart_url": null
   },
   {
     "id": "sample-tracked-001",
@@ -18,7 +23,12 @@
     "type": "tracked",
     "notes": "demo row for worker refresh",
     "status": "wanted",
+    "stores": "amazon",
     "amazon_price": "19.99",
-    "amazon_url": "https://www.amazon.com/dp/B0D1XD1ZV3"
+    "amazon_url": "https://www.amazon.com/dp/B0D1XD1ZV3",
+    "target_price": null,
+    "target_url": null,
+    "walmart_price": null,
+    "walmart_url": null
   }
 ]

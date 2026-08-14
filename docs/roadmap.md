@@ -27,8 +27,8 @@ Then **v0.5.0** iOS read-only (sample stub on Windows). Live device/Sign-In is *
 - **v0.3.0 Sheets sync foundation** — SA read/write, `list-items` — **done** (2026-08-11)
 - **v0.4.0 Vertical slice** — Amazon fetcher, `refresh`, `add-tracked` — **done**
 - **v0.5.0 iOS read-only list** — SwiftUI list + tappable prices (sample stub + Sign-In research) — **done** (2026-08-11)
-- **v0.6.0 Text items + lists + priority** — app CRUD for text asks (sample stub until v0.9.1)
-- **v0.7.0 Add via URL + manual stores** — per-item store checklist
+- **v0.6.0 Text items + lists + priority** — app CRUD for text asks (sample stub until v0.9.1) — **done** (2026-08-14)
+- **v0.7.0 Add via URL + manual stores** — per-item store checklist (sample stub until v0.9.1) — **done** (2026-08-14)
 - **v0.8.0 Target + Walmart** — next fetchers + `doctor` CLI
 - **v0.9.0 Barcode / UPC** — confirm-first identity (sources; camera smoke in v0.9.1)
 - **v0.9.1 Mac session (live iOS)** — Xcode + Sign-In + device; smoke 0.5–0.9 on a real Mac **before v1.0.0**

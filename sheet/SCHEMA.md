@@ -17,13 +17,13 @@ Source of truth for Family Price Tracker. Two tabs: **Items** and **Config**.
 | I | `qty` | Optional number |
 | J | `notes` | Freeform prefs |
 | K | `status` | `wanted` \| `purchased` \| `dropped` |
-| L | `stores` | Comma-separated store keys checked for this item (e.g. `amazon`) |
+| L | `stores` | Comma-separated store keys checked for this item (e.g. `amazon,target`). Lowercase, no extra spaces preferred; parsers strip whitespace. Empty = infer from whichever `*_url` columns are filled (legacy rows). Worker refreshes **only** checked keys that have a product URL; a checked store with no URL is skipped (not an error) until a URL or UPC exists. Custom keys wait for v1.2. |
 | M | `amazon_price` | Number or currency text |
 | N | `amazon_url` | Product URL (display as hyperlink in Sheet) |
-| O | `target_price` | Reserved |
-| P | `target_url` | Reserved |
-| Q | `walmart_price` | Reserved |
-| R | `walmart_url` | Reserved |
+| O | `target_price` | Worker write-back in v0.8 |
+| P | `target_url` | Product URL when Target is selected |
+| Q | `walmart_price` | Worker write-back in v0.8 |
+| R | `walmart_url` | Product URL when Walmart is selected |
 | S | `last_checked` | ISO-8601 UTC when worker last succeeded for any store |
 | T | `upc` | Optional |
 | U | `asin` | Optional Amazon ASIN |
@@ -74,7 +74,7 @@ Restrict Items `list_owner` (column D) to Config owners so relatives cannot inve
 3. Criteria: **Dropdown (from a range)** → `Config!A2:A` (the names under the `list_owner` header, not the header itself).
 4. Reject input that is not on the list (a warning is weaker — reject keeps the app and Sheet aligned).
 
-The iOS app loads the same Config column (`fetchListOwners`) and refuses to save an unknown owner.
+The iOS app loads the same Config column (`fetchListOwners`) and refuses to save an unknown owner. The store checklist (`fetchStores`) uses columns C–E: only **enabled** keys with URL columns (`amazon`, `target`, `walmart`) appear. `custom` stays unused until v1.2.
 
 ## Config tab
 
@@ -98,6 +98,8 @@ Shared
 | walmart | Walmart | yes |
 | costco | Costco | no |
 | custom | Custom / other | yes |
+
+`enabled=no` hides a store from the iOS checklist (Costco in the sample). Relatives can still type keys into Items `stores` by hand; the worker will try them and fail loudly if no fetcher exists.
 
 ## Sample import
 

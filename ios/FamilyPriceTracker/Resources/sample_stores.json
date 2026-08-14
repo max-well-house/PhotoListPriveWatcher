@@ -1,0 +1,6 @@
+[
+  {"store_key": "amazon", "display_name": "Amazon", "enabled": true},
+  {"store_key": "target", "display_name": "Target", "enabled": true},
+  {"store_key": "walmart", "display_name": "Walmart", "enabled": true},
+  {"store_key": "costco", "display_name": "Costco", "enabled": false}
+]

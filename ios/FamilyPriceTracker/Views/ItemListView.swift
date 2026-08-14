@@ -18,7 +18,9 @@ struct ItemListView: View {
     @EnvironmentObject private var store: WishlistStore
     @State private var ownerFilter: String = "All"
     @State private var statusFilter: StatusFilter = .wanted
-    @State private var showingAdd = false
+    @State private var showingAddMenu = false
+    @State private var showingAddText = false
+    @State private var showingAddURL = false
 
     private var owners: [String] {
         let fromConfig = store.listOwners
@@ -45,7 +47,7 @@ struct ItemListView: View {
 
     private var emptyDescription: String {
         if store.items.isEmpty {
-            return "Add a text item to start the family wishlist."
+            return "Add a text item or paste a product URL to start the family wishlist."
         }
         if statusFilter == .wanted, ownerFilter == "All" {
             return "No wanted items. Switch status to All to see purchased or dropped."
@@ -79,8 +81,8 @@ struct ItemListView: View {
                                 Text("P\(item.priority) · \(item.listOwner) · \(item.status)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                if let price = item.amazonPrice, !price.isEmpty {
-                                    Text("Amazon $\(price)")
+                                if let summary = priceSummary(item) {
+                                    Text(summary)
                                         .font(.subheadline)
                                 }
                             }
@@ -107,16 +109,27 @@ struct ItemListView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        showingAdd = true
+                        showingAddMenu = true
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityLabel("Add text item")
+                    .accessibilityLabel("Add item")
+                    .confirmationDialog("Add", isPresented: $showingAddMenu, titleVisibility: .visible) {
+                        Button("Text item") { showingAddText = true }
+                        Button("From product URL") { showingAddURL = true }
+                        Button("Cancel", role: .cancel) {}
+                    }
                 }
             }
-            .sheet(isPresented: $showingAdd) {
+            .sheet(isPresented: $showingAddText) {
                 NavigationStack {
-                    AddTextItemView(isPresented: $showingAdd)
+                    AddTextItemView(isPresented: $showingAddText)
+                }
+                .environmentObject(store)
+            }
+            .sheet(isPresented: $showingAddURL) {
+                NavigationStack {
+                    AddURLItemView(isPresented: $showingAddURL)
                 }
                 .environmentObject(store)
             }
@@ -129,5 +142,15 @@ struct ItemListView: View {
                 }
             }
         }
+    }
+
+    private func priceSummary(_ item: WishlistItem) -> String? {
+        for key in StoreURL.urlBackedKeys {
+            if let price = item.price(for: key), !price.isEmpty {
+                let label = StoreURL.displayName(for: key, directory: store.storeDirectory)
+                return "\(label) $\(price)"
+            }
+        }
+        return nil
     }
 }

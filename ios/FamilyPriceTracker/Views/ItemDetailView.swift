@@ -8,6 +8,10 @@ struct ItemDetailView: View {
     @State private var priority: Int = ItemPriority.default
     @State private var listOwner: String = ""
     @State private var status: String = ItemStatus.wanted.rawValue
+    @State private var selectedStores: Set<String> = []
+    @State private var amazonURLText: String = ""
+    @State private var targetURLText: String = ""
+    @State private var walmartURLText: String = ""
     @State private var didHydrate = false
     @State private var isSaving = false
     @State private var saveError: String?
@@ -24,12 +28,31 @@ struct ItemDetailView: View {
         return owners
     }
 
+    private var detailStores: [StoreDirectoryEntry] {
+        var byKey: [String: StoreDirectoryEntry] = [:]
+        for entry in store.checklistStores {
+            byKey[entry.storeKey] = entry
+        }
+        for key in selectedStores where byKey[key] == nil && StoreURL.urlBackedKeySet.contains(key) {
+            byKey[key] = StoreDirectoryEntry(
+                storeKey: key,
+                displayName: StoreURL.displayName(for: key, directory: store.storeDirectory),
+                enabled: true
+            )
+        }
+        return StoreURL.urlBackedKeys.compactMap { byKey[$0] }
+    }
+
     private var isDirty: Bool {
         guard let item else { return false }
         return notes != item.notes
             || priority != item.priority
             || listOwner != item.listOwner
             || status != item.status
+            || selectedStores != Set(item.storeKeys)
+            || trimmed(amazonURLText) != (item.amazonURL ?? "")
+            || trimmed(targetURLText) != (item.targetURL ?? "")
+            || trimmed(walmartURLText) != (item.walmartURL ?? "")
     }
 
     var body: some View {
@@ -58,22 +81,19 @@ struct ItemDetailView: View {
                         TextField("Notes", text: $notes, axis: .vertical)
                             .lineLimit(3 ... 10)
                     }
-                    Section("Prices") {
-                        if let urlString = item.amazonURL, let url = URL(string: urlString) {
-                            Link(destination: url) {
-                                HStack {
-                                    Text("Amazon")
-                                    Spacer()
-                                    if let price = item.amazonPrice, !price.isEmpty {
-                                        Text("$\(price)")
-                                    } else {
-                                        Text("Open")
-                                    }
-                                }
-                            }
-                        } else {
-                            Text("Not checked")
+                    Section("Stores") {
+                        if detailStores.isEmpty {
+                            Text("No stores in Config. Add Amazon, Target, or Walmart on the Config tab.")
                                 .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(detailStores) { entry in
+                                Toggle(entry.displayName, isOn: storeBinding(for: entry.storeKey))
+                            }
+                        }
+                    }
+                    Section("Prices") {
+                        ForEach(detailStores) { entry in
+                            storePriceRow(entry, item: item)
                         }
                     }
                 }
@@ -105,6 +125,32 @@ struct ItemDetailView: View {
         .onAppear { hydrateIfNeeded() }
     }
 
+    @ViewBuilder
+    private func storePriceRow(_ entry: StoreDirectoryEntry, item: WishlistItem) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("\(entry.displayName) URL", text: urlBinding(for: entry.storeKey))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(.URL)
+            if let urlString = liveURL(for: entry.storeKey), let url = URL(string: urlString) {
+                Link(destination: url) {
+                    HStack {
+                        Text(entry.displayName)
+                        Spacer()
+                        if let price = item.price(for: entry.storeKey), !price.isEmpty {
+                            Text("$\(price)")
+                        } else {
+                            Text("Open")
+                        }
+                    }
+                }
+            } else if selectedStores.contains(entry.storeKey) {
+                Text("Not checked")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private func hydrateIfNeeded(force: Bool = false) {
         guard let item else { return }
         guard force || !didHydrate else { return }
@@ -112,6 +158,10 @@ struct ItemDetailView: View {
         priority = item.priority
         listOwner = item.listOwner
         status = item.status
+        selectedStores = Set(item.storeKeys)
+        amazonURLText = item.amazonURL ?? ""
+        targetURLText = item.targetURL ?? ""
+        walmartURLText = item.walmartURL ?? ""
         didHydrate = true
     }
 
@@ -123,6 +173,15 @@ struct ItemDetailView: View {
         item.priority = priority
         item.listOwner = listOwner
         item.status = status
+        item.amazonURL = optionalURL(amazonURLText)
+        item.targetURL = optionalURL(targetURLText)
+        item.walmartURL = optionalURL(walmartURLText)
+        item.stores = StoreURL.encode(
+            StoreURL.urlBackedKeys.filter { selectedStores.contains($0) }
+        )
+        if item.hasAnyStoreURL {
+            item.type = "tracked"
+        }
         do {
             try await store.save(item)
             didHydrate = false
@@ -132,5 +191,63 @@ struct ItemDetailView: View {
         } catch {
             saveError = "Could not save changes."
         }
+    }
+
+    private func storeBinding(for storeKey: String) -> Binding<Bool> {
+        Binding(
+            get: { selectedStores.contains(storeKey) },
+            set: { on in
+                if on {
+                    selectedStores.insert(storeKey)
+                } else {
+                    selectedStores.remove(storeKey)
+                }
+            }
+        )
+    }
+
+    private func urlBinding(for storeKey: String) -> Binding<String> {
+        Binding(
+            get: {
+                switch storeKey {
+                case "amazon": return amazonURLText
+                case "target": return targetURLText
+                case "walmart": return walmartURLText
+                default: return ""
+                }
+            },
+            set: { value in
+                switch storeKey {
+                case "amazon": amazonURLText = value
+                case "target": targetURLText = value
+                case "walmart": walmartURLText = value
+                default: break
+                }
+                if StoreURL.storeKey(from: value) == storeKey {
+                    selectedStores.insert(storeKey)
+                }
+            }
+        )
+    }
+
+    private func liveURL(for storeKey: String) -> String? {
+        let raw: String
+        switch storeKey {
+        case "amazon": raw = amazonURLText
+        case "target": raw = targetURLText
+        case "walmart": raw = walmartURLText
+        default: return nil
+        }
+        let value = StoreURL.normalizedURLString(raw)
+        return value.isEmpty ? nil : value
+    }
+
+    private func optionalURL(_ raw: String) -> String? {
+        let value = StoreURL.normalizedURLString(raw)
+        return value.isEmpty ? nil : value
+    }
+
+    private func trimmed(_ raw: String) -> String {
+        raw.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

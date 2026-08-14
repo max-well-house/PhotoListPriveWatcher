@@ -37,7 +37,7 @@ python -m family_price_tracker refresh --item <id>
 
 5. Open the Sheet — price + product URL should be filled. Family can follow links without the app.
 
-iOS can add/edit text wishlist items (needs a Mac to compile). Live Sheet Sign-In is v0.9.1.
+iOS can add text items and tracked items from a product URL (needs a Mac to compile). Live Sheet Sign-In is v0.9.1.
 
 ## Non-goals (v1)
 

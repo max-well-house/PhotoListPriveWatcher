@@ -34,7 +34,9 @@ python -m family_price_tracker refresh --due --dry-run
 python -m family_price_tracker doctor
 ```
 
-New rows from `add-tracked` mint a UUID `id` once (never rewritten on refresh). See [../docs/decisions.md](../docs/decisions.md) Decision #006.
+New rows from `add-tracked` mint a UUID `id` once (never rewritten on refresh). The command infers Amazon / Target / Walmart from the URL host and writes that key into `stores` plus the matching `*_url` column. Unknown hosts are rejected. See [../docs/decisions.md](../docs/decisions.md) Decision #006 and [../sheet/SCHEMA.md](../sheet/SCHEMA.md) for `stores` encoding (`amazon,target`).
+
+`refresh` honors the `stores` column: only checked keys run. A checked store with no product URL is skipped (logged, not an error). If `stores` is empty, keys are inferred from whichever `*_url` columns are filled. Target/Walmart fetchers are v0.8 — those keys error with “no fetcher registered” until then.
 
 ## Amazon fixture URL
 

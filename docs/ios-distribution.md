@@ -46,11 +46,15 @@ Store client IDs and `SHEET_ID` in local Xcode config / Info.plist / xcconfig �
 
 Checklist milestone **before v1.0.0**. Not new features — prove everything already coded on Windows:
 
-1. New Xcode iOS 17+ app; copy `ios/FamilyPriceTracker/` sources; add both sample JSON files to the bundle.
+1. New Xcode iOS 17+ app; copy `ios/FamilyPriceTracker/` sources; add **all three** sample JSON files (`sample_items.json`, `sample_owners.json`, `sample_stores.json`) to the bundle.
 2. Add the Google Sign-In package. Implement `GoogleAuthSession` with the **spreadsheets** write scope (constant on `SheetsRuntimeConfig`).
 3. Point `FamilyPriceTrackerApp` at `GoogleSheetsClient` when `SheetsRuntimeConfig.fromInfoDictionary()` is present; keep `SampleSheetClient` as fallback.
 4. Install on at least one family iPhone (Xcode device or TestFlight).
-5. Smoke: Sign In → list loads from the live Sheet → add a text item (confirm UI) → row visible to a relative → edit notes/priority/list/status → Sheet matches. If v0.7/v0.9 sources already exist, smoke those too (URL add; barcode on a **physical device**).
+5. Smoke:
+   - Sign In → list loads from the live Sheet.
+   - Add a text item (confirm UI) → row visible to a relative → edit notes/priority/list/status → Sheet matches.
+   - **v0.7:** paste an Amazon product URL → confirm name/stores → Save → relative sees `type=tracked`, `stores`, and `amazon_url`. Edit the store checklist and a Target/Walmart URL on detail; Config store directory (columns C–E) drives the checklist. On the home PC, `refresh --item` skips unchecked stores and skips a checked store with no URL.
+   - **v0.9:** barcode on a **physical device** if those sources exist.
 
 Photos / Drive thumbnails stay **v1.0.0** and still need a Mac.
 

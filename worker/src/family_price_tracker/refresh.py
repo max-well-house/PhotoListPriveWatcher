@@ -5,7 +5,13 @@ import uuid
 
 from family_price_tracker.config import Settings, load_settings
 from family_price_tracker.fetchers import get_fetcher, load_builtin_fetchers
-from family_price_tracker.models import FetchError, Item, PriceResult
+from family_price_tracker.models import (
+    FetchError,
+    Item,
+    PriceResult,
+    UNKNOWN_HOST_MESSAGE,
+    store_key_from_url,
+)
 from family_price_tracker.sheets import SheetsClient
 
 log = logging.getLogger(__name__)
@@ -20,21 +26,20 @@ def refresh_item(
 ) -> list[str]:
     load_builtin_fetchers()
     errors: list[str] = []
-    stores = item.store_keys() or (["amazon"] if item.amazon_url else [])
+    stores = item.store_keys()
     if not stores:
         errors.append(f"{item.id}: no stores configured")
         return errors
 
     for store in stores:
+        url = item.url_for_store(store).strip()
+        if not url:
+            log.info("%s/%s: skipped (no product URL)", item.id, store)
+            continue
         fetcher = get_fetcher(store)
         if fetcher is None:
             errors.append(f"{item.id}/{store}: no fetcher registered")
             continue
-        url = {
-            "amazon": item.amazon_url,
-            "target": item.target_url,
-            "walmart": item.walmart_url,
-        }.get(store, "")
         # Allow injecting user-agent into AmazonFetcher instances created at import
         if hasattr(fetcher, "user_agent"):
             fetcher.user_agent = settings.user_agent  # type: ignore[attr-defined]
@@ -67,6 +72,36 @@ def refresh_item(
     return errors
 
 
+def make_tracked_item(
+    *,
+    url: str,
+    name: str,
+    notes: str,
+    priority: int,
+    list_owner: str,
+) -> Item:
+    key = store_key_from_url(url)
+    if key is None:
+        raise ValueError(UNKNOWN_HOST_MESSAGE)
+    item = Item(
+        id=str(uuid.uuid4()),
+        name=name,
+        list_owner=list_owner,
+        priority=priority,
+        type="tracked",
+        notes=notes,
+        status="wanted",
+        stores=key,
+    )
+    if key == "amazon":
+        item.amazon_url = url
+    elif key == "target":
+        item.target_url = url
+    elif key == "walmart":
+        item.walmart_url = url
+    return item
+
+
 def add_tracked(
     client: SheetsClient,
     *,
@@ -78,16 +113,12 @@ def add_tracked(
     refresh: bool,
     settings: Settings,
 ) -> Item:
-    item = Item(
-        id=str(uuid.uuid4()),
+    item = make_tracked_item(
+        url=url,
         name=name,
-        list_owner=list_owner,
-        priority=priority,
-        type="tracked",
         notes=notes,
-        status="wanted",
-        stores="amazon",
-        amazon_url=url,
+        priority=priority,
+        list_owner=list_owner,
     )
     client.append_item(item)
     log.info("Added tracked item %s", item.id)
@@ -151,16 +182,20 @@ def cmd_add_tracked(
 ) -> int:
     settings = load_settings()
     client = SheetsClient(settings)
-    item = add_tracked(
-        client,
-        url=url,
-        name=name,
-        notes=notes,
-        priority=priority,
-        list_owner=list_owner,
-        refresh=do_refresh,
-        settings=settings,
-    )
+    try:
+        item = add_tracked(
+            client,
+            url=url,
+            name=name,
+            notes=notes,
+            priority=priority,
+            list_owner=list_owner,
+            refresh=do_refresh,
+            settings=settings,
+        )
+    except ValueError as exc:
+        print(str(exc))
+        return 2
     print(item.id)
     return 0
 

@@ -30,7 +30,10 @@ def main(argv: list[str] | None = None) -> int:
         help="Fetch and print would-write values; do not update the Sheet",
     )
 
-    p_add = sub.add_parser("add-tracked", help="Append a tracked item with Amazon URL")
+    p_add = sub.add_parser(
+        "add-tracked",
+        help="Append a tracked item from an Amazon, Target, or Walmart product URL",
+    )
     p_add.add_argument("--url", required=True)
     p_add.add_argument("--name", required=True)
     p_add.add_argument("--notes", default="")
