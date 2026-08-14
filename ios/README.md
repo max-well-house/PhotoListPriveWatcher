@@ -1,12 +1,14 @@
 # Family Price Tracker — iOS
 
-SwiftUI client for the two primary users. **Requires a Mac + Xcode** to build.
+SwiftUI client for the two primary users. **Requires a Mac + Xcode** to build and to run Google Sign-In. Swift sources in this folder are the source of truth on Windows.
 
 ## Status
 
-Read-only list + detail UI against a **documented sample JSON stub** (`Resources/sample_items.json` via `SampleSheetClient`). That satisfies the v0.5.0 list/detail milestone until Google Sign-In is wired on a Mac.
+v0.6.0: add/edit **text** wishlist items (name, notes, priority 1–5, list owner, status) against a **documented sample stub** (`Resources/sample_items.json` + `sample_owners.json` via `SampleSheetClient`). Mutations stay in memory for the session.
 
-Live Sheet access: follow the research note in [docs/ios-distribution.md](../docs/ios-distribution.md) (OAuth, iOS client ID, readonly Sheets scope). Swap `SampleSheetClient` for a Sheets-backed `SheetClient` — do not embed the worker service-account JSON.
+Live Google Sheet read/write is **v0.9.1** (Mac session): Google Sign-In, write scope, Xcode project, device install. `GoogleSheetsClient` is written but untested until then. Do not embed the worker service-account JSON.
+
+Until v0.9.1, relatives still add/edit in the Google Sheet if they need a durable row.
 
 ## Structure
 
@@ -15,9 +17,15 @@ FamilyPriceTracker/
   Models/Item.swift
   Views/ItemListView.swift
   Views/ItemDetailView.swift
-  Services/SheetClient.swift   # SampleSheetClient stub; OAuth Sheets later
+  Views/AddTextItemView.swift      # confirm-before-save
+  Services/SheetClient.swift       # protocol + SampleSheetClient
+  Services/WishlistStore.swift
+  Services/GoogleSheetsClient.swift  # Sheets REST; Sign-In in v0.9.1
   Resources/sample_items.json
+  Resources/sample_owners.json     # Config list owners for the stub
   FamilyPriceTrackerApp.swift
 ```
 
-Until an `.xcodeproj` is generated on a Mac, treat the Swift sources here as the source of truth to copy into a new Xcode App project (iOS 17+).
+Until an `.xcodeproj` is generated on a Mac (v0.9.1), copy these sources into a new Xcode App project (iOS 17+). Include both JSON resources in the app bundle.
+
+Live Sheet access: [docs/ios-distribution.md](../docs/ios-distribution.md).

@@ -10,22 +10,23 @@ Family Price Tracker is a **private** two-device app. No App Store launch planne
 
 ## Dev constraint
 
-The monorepo is editable on Windows, but **building the SwiftUI app requires a Mac** (or a cloud Mac CI). Sources under `ios/` are the source of truth on Windows; generate or sync an `.xcodeproj` on a Mac when you are ready to run.
+The monorepo is editable on Windows, but **building the SwiftUI app requires a Mac** (or a cloud Mac). Sources under `ios/` are the source of truth on Windows; generate or sync an `.xcodeproj` on a Mac during **v0.9.1**.
 
-Until Google Sign-In is wired, the app loads **sample JSON** (documented stub). That is enough for list/detail UI work; live Sheet reads wait for OAuth below.
+Until that Mac session, the app uses **sample JSON** (`SampleSheetClient`) for list, detail, and text-item add/edit. Add/edit is confirm-before-save; mutations are in-memory only. Relatives who need a durable row still use the Google Sheet.
+
+Do not mimic macOS on a Windows PC. Do not put the worker service-account JSON in the app.
 
 ## Research: Google Sign-In + Sheets API (chosen approach)
 
-**Approach:** Google Sign-In (OAuth) for the two editors who own the Sheet — same as [Decision #002](decisions.md). Do **not** embed the worker service-account JSON in the app.
+**Approach:** Google Sign-In (OAuth) for the two editors who own the Sheet — same as [Decision #002](decisions.md).
 
 | Concern | Choice |
 |---|---|
 | Auth | Google Sign-In for iOS (OAuth user tokens) |
-| API | Google Sheets API v4 over HTTPS |
-| Read-only milestone | Scope `https://www.googleapis.com/auth/spreadsheets.readonly` |
-| Later CRUD (v0.6+) | Escalate to `https://www.googleapis.com/auth/spreadsheets` |
+| API | Google Sheets API v4 over HTTPS (`GoogleSheetsClient`) |
+| Scope | `https://www.googleapis.com/auth/spreadsheets` (read + write). Readonly is not enough for v0.6 CRUD. |
 | Sheet access | Share the Sheet with the same Google accounts (Editor); worker SA stays on the PC only |
-| SDK | Google Sign-In for iOS + URL session / GoogleAPIClientForREST, or GTMAppAuth + Sheets REST |
+| SDK | Google Sign-In for iOS + `URLSession` Sheets REST (`GoogleAuthSession` + `GoogleSheetsClient`) |
 
 ### Cloud / GCP setup (iOS OAuth client)
 
@@ -39,15 +40,20 @@ Run these once in Google Cloud (same project as the worker Sheets API is fine):
 6. Configure the OAuth consent screen for **Internal** or **Testing** with the two family Google accounts as test users (External + verification is unnecessary at family scale).
 7. Share the Google Sheet with those two accounts as **Editor** (relatives can stay Viewer).
 
-Store client IDs in local Xcode config or xcconfig — **never commit** secrets or a service-account JSON into `ios/`.
+Store client IDs and `SHEET_ID` in local Xcode config / Info.plist / xcconfig — **never commit** them or a service-account JSON into `ios/`. Optional keys: `SHEET_ID`, `SHEET_ITEMS_TAB`, `SHEET_CONFIG_TAB` (see `SheetsRuntimeConfig`).
 
-### App wiring (when on a Mac)
+### v0.9.1 Mac session (live iOS)
 
-1. Add the Google Sign-In package dependency in Xcode.
-2. Call Sign-In, request the Sheets readonly scope, obtain an access token.
-3. Replace `SampleSheetClient` in `ios/.../Services/SheetClient.swift` with a live client that `GET`s `'{ItemsTab}'!A2:V` (same columns as [sheet/SCHEMA.md](../sheet/SCHEMA.md)).
-4. Pass `SHEET_ID` (and tab name) via build settings or a non-committed local plist — same IDs as `.env` on the worker, not the SA path.
+Checklist milestone **before v1.0.0**. Not new features — prove everything already coded on Windows:
+
+1. New Xcode iOS 17+ app; copy `ios/FamilyPriceTracker/` sources; add both sample JSON files to the bundle.
+2. Add the Google Sign-In package. Implement `GoogleAuthSession` with the **spreadsheets** write scope (constant on `SheetsRuntimeConfig`).
+3. Point `FamilyPriceTrackerApp` at `GoogleSheetsClient` when `SheetsRuntimeConfig.fromInfoDictionary()` is present; keep `SampleSheetClient` as fallback.
+4. Install on at least one family iPhone (Xcode device or TestFlight).
+5. Smoke: Sign In → list loads from the live Sheet → add a text item (confirm UI) → row visible to a relative → edit notes/priority/list/status → Sheet matches. If v0.7/v0.9 sources already exist, smoke those too (URL add; barcode on a **physical device**).
+
+Photos / Drive thumbnails stay **v1.0.0** and still need a Mac.
 
 ### Windows note
 
-You can edit Swift and docs on Windows, but Sign-In, keychain, and device install only work after an Xcode build on a Mac (or cloud Mac). Do not block list/detail UI progress on OAuth.
+You can edit Swift and docs on Windows. Sign-In, keychain, Simulator, and device install only work on a Mac (or rented cloud Mac). Do not block add/edit UI progress on OAuth — that closeout is v0.9.1.

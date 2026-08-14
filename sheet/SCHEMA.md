@@ -65,6 +65,17 @@ Make high-priority rows obvious for relatives (desktop Sheets):
 
 Priority column is E (`priority`, 1 = highest). Mobile Sheets shows the colors; editing rules is easier on desktop.
 
+### Data validation: list_owner
+
+Restrict Items `list_owner` (column D) to Config owners so relatives cannot invent list names:
+
+1. Select `D2:D` (or the used data range) on the **Items** tab.
+2. **Data → Data validation → Add rule**.
+3. Criteria: **Dropdown (from a range)** → `Config!A2:A` (the names under the `list_owner` header, not the header itself).
+4. Reject input that is not on the list (a warning is weaker — reject keeps the app and Sheet aligned).
+
+The iOS app loads the same Config column (`fetchListOwners`) and refuses to save an unknown owner.
+
 ## Config tab
 
 ### List owners (column A header `list_owner`)

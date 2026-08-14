@@ -52,7 +52,7 @@ MILESTONES = [
     ),
     (
         "v0.6.0 - Text items + lists + priority",
-        "## Era 2 — App CRUD\n\nWishlist text asks without tracking.\n\n**Must-ship:** add text item, edit notes/priority/list/status, Config validation.",
+        "## Era 2 — App CRUD\n\nWishlist text asks without tracking.\n\n**Must-ship:** add text item, edit notes/priority/list/status, Config validation.\n\nLive Sheet write is v0.9.1 (Mac). Windows closeout uses the sample stub.",
     ),
     (
         "v0.7.0 - Add via URL + manual stores",
@@ -64,7 +64,11 @@ MILESTONES = [
     ),
     (
         "v0.9.0 - Barcode / UPC identity",
-        "## Era 3 — Identity\n\nConfirm-first matching.\n\n**Must-ship:** barcode research, scan+confirm UI, assisted multi-store match (exact UPC).",
+        "## Era 3 — Identity\n\nConfirm-first matching.\n\n**Must-ship:** barcode research, scan+confirm UI, assisted multi-store match (exact UPC).\n\nCamera on a physical device is v0.9.1.",
+    ),
+    (
+        "v0.9.1 - Mac session (live iOS)",
+        "## Era 3 — Live device gate (before v1.0.0)\n\nChecklist only — not new features. Sit at a real Mac (borrowed or rented) and prove iOS.\n\n**Must-ship:** Xcode project, Google Sign-In + Sheets write, install on a family iPhone, smoke list/add/edit (and URL add / barcode if those sources already exist).\n\n**Out of scope:** photos (v1.0.0, still Mac), worker fetchers.",
     ),
     (
         "v1.0.0 - Photos + Sheet-visible image",
@@ -256,17 +260,19 @@ add("Document iOS distribution (TestFlight / sideload)", M, ["documentation", "i
 # --- v0.6.0 ---
 M = "v0.6.0 - Text items + lists + priority"
 add("iOS: add text-only item (notes, priority, list)", M, ["ios", "sheet", "Feature"],
-    "type=text; store columns empty.",
-    "Confirm save writes Sheet row; appears in list + Sheet.",
-    ["Creates text row", "Notes/priority/list set", "Visible in Sheet for family"])
+    "type=text; store columns empty. SampleSheetClient until v0.9.1 live Sheet.",
+    "Confirm save writes a text row (in-memory stub on Windows; live Sheet in v0.9.1).",
+    ["Creates text row", "Notes/priority/list set", "Confirm UI before save"],
+    ["Live Sheet visibility (v0.9.1)", "Add from URL (v0.7)"])
 add("iOS: edit notes / priority / list_owner / status", M, ["ios", "Feature"],
-    "CRUD fields relatives rely on.",
-    "Edits sync to Sheet; optional purchased/dropped filter.",
-    ["Edit persists to Sheet", "Status values wanted/purchased/dropped"])
+    "CRUD fields relatives rely on. Stub until v0.9.1 live write.",
+    "Edits persist through SheetClient; wanted-default filter; purchased/dropped available.",
+    ["Edit persists via SheetClient", "Status values wanted/purchased/dropped"],
+    ["Live Sheet persistence (v0.9.1)"])
 add("Sheet: list_owner validation against Config tab", M, ["sheet", "enhancement"],
     "Do not invent list names ad hoc without Config.",
-    "App loads owners from Config; schema notes data validation.",
-    ["Owners loaded from Config", "Schema doc mentions validation"])
+    "App loads owners from Config (sample_owners.json in stub); schema notes data validation.",
+    ["Owners loaded from Config / sample owners", "Schema doc mentions validation"])
 
 # --- v0.7.0 ---
 M = "v0.7.0 - Add via URL + manual stores"
@@ -313,6 +319,27 @@ add("Assisted multi-store match (exact UPC only auto-suggest)", M, ["ios", "work
     "Suggest Amazon/Target/Walmart when UPC exact; fuzzy title = suggest only.",
     "No auto-add outside directory; user confirms each store link.",
     ["Exact UPC can pre-check suggestions", "Fuzzy requires confirm", "Never auto-add unknown stores"])
+
+# --- v0.9.1 ---
+M = "v0.9.1 - Mac session (live iOS)"
+add("Mac: create/sync Xcode project from ios/ sources", M, ["ios", "documentation"],
+    "Windows repo has Swift sources but no .xcodeproj.",
+    "Xcode iOS 17+ app copies FamilyPriceTracker sources; both sample JSON files in the bundle.",
+    ["Xcode project builds", "sample_items.json and sample_owners.json in bundle"],
+    ["Photos (v1.0.0)"])
+add("iOS: Google Sign-In + Sheets write", M, ["ios", "sheet", "Feature"],
+    "v0.5 researched readonly; CRUD needs write scope. No service-account JSON in the app.",
+    "Sign-In obtains a token; GoogleSheetsClient reads/writes Items + Config.",
+    ["Sign-In works on device or Simulator", "Scope is spreadsheets (write)", "SHEET_ID not committed"])
+add("Mac: install on a family iPhone", M, ["ios", "documentation"],
+    "Two primary users; at least one phone must run a real build.",
+    "Xcode device install or TestFlight internal testing.",
+    ["App runs on a physical iPhone"])
+add("Mac: live smoke of list, text CRUD, and deferred iOS", M, ["ios", "sheet", "Feature"],
+    "Prove Windows-coded flows against the real Sheet before v1.0.0.",
+    "Sign In → list from Sheet → add text item visible to a relative → edit persists. Smoke URL add if v0.7 coded; barcode on a physical device if v0.9 coded.",
+    ["List loads from live Sheet", "Add text item visible in Sheet", "Edit notes/priority/list/status persists"],
+    ["Photos / Drive thumbnails (v1.0.0)"])
 
 # --- v1.0.0 ---
 M = "v1.0.0 - Photos + Sheet-visible image"

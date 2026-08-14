@@ -1,51 +1,82 @@
 import SwiftUI
 
-struct ItemListView: View {
-    private let client: SheetClient
-    @State private var items: [WishlistItem] = []
-    @State private var ownerFilter: String = "All"
-    @State private var loadError: String?
-    @State private var didLoad = false
+enum StatusFilter: String, CaseIterable, Identifiable {
+    case wanted
+    case all
 
-    init(client: SheetClient = SampleSheetClient()) {
-        self.client = client
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .wanted: return "Wanted"
+        case .all: return "All"
+        }
     }
+}
+
+struct ItemListView: View {
+    @EnvironmentObject private var store: WishlistStore
+    @State private var ownerFilter: String = "All"
+    @State private var statusFilter: StatusFilter = .wanted
+    @State private var showingAdd = false
 
     private var owners: [String] {
-        let set = Set(items.map(\.listOwner))
-        return ["All"] + set.sorted()
+        let fromConfig = store.listOwners
+        if fromConfig.isEmpty {
+            let set = Set(store.items.map(\.listOwner))
+            return ["All"] + set.sorted()
+        }
+        return ["All"] + fromConfig
     }
 
     private var filtered: [WishlistItem] {
-        let base = ownerFilter == "All" ? items : items.filter { $0.listOwner == ownerFilter }
-        return base.sorted { $0.priority < $1.priority }
+        var base = store.items
+        if ownerFilter != "All" {
+            base = base.filter { $0.listOwner == ownerFilter }
+        }
+        if statusFilter == .wanted {
+            base = base.filter { $0.status == ItemStatus.wanted.rawValue }
+        }
+        return base.sorted { lhs, rhs in
+            if lhs.priority != rhs.priority { return lhs.priority < rhs.priority }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    private var emptyDescription: String {
+        if store.items.isEmpty {
+            return "Add a text item to start the family wishlist."
+        }
+        if statusFilter == .wanted, ownerFilter == "All" {
+            return "No wanted items. Switch status to All to see purchased or dropped."
+        }
+        if ownerFilter != "All" {
+            return "No items for this list. Try All or another owner."
+        }
+        return "Nothing matches these filters."
     }
 
     var body: some View {
         NavigationStack {
             Group {
-                if let loadError {
+                if let loadError = store.loadError {
                     ContentUnavailableView(
                         "Couldn’t load wishlist",
                         systemImage: "exclamationmark.triangle",
                         description: Text(loadError)
                     )
-                } else if didLoad && filtered.isEmpty {
+                } else if store.didLoad && filtered.isEmpty {
                     ContentUnavailableView(
                         "No items",
                         systemImage: "list.bullet",
-                        description: Text(
-                            ownerFilter == "All"
-                                ? "Add items in the Google Sheet, then refresh."
-                                : "No items for this list. Try All or another owner."
-                        )
+                        description: Text(emptyDescription)
                     )
                 } else {
                     List(filtered) { item in
-                        NavigationLink(value: item) {
+                        NavigationLink(value: item.id) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(item.name).font(.headline)
-                                Text("P\(item.priority) · \(item.listOwner) · \(item.type)")
+                                Text("P\(item.priority) · \(item.listOwner) · \(item.status)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 if let price = item.amazonPrice, !price.isEmpty {
@@ -58,38 +89,45 @@ struct ItemListView: View {
                 }
             }
             .navigationTitle("Wishlist")
-            .navigationDestination(for: WishlistItem.self) { item in
-                ItemDetailView(item: item)
+            .navigationDestination(for: String.self) { id in
+                ItemDetailView(itemId: id)
             }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Picker("Status", selection: $statusFilter) {
+                        ForEach(StatusFilter.allCases) { filter in
+                            Text(filter.label).tag(filter)
+                        }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Picker("List", selection: $ownerFilter) {
                         ForEach(owners, id: \.self) { Text($0).tag($0) }
                     }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingAdd = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("Add text item")
+                }
+            }
+            .sheet(isPresented: $showingAdd) {
+                NavigationStack {
+                    AddTextItemView(isPresented: $showingAdd)
+                }
+                .environmentObject(store)
             }
             .refreshable {
-                reload()
+                await store.reload()
             }
             .task {
-                if !didLoad {
-                    reload()
+                if !store.didLoad {
+                    await store.reload()
                 }
             }
         }
-    }
-
-    private func reload() {
-        do {
-            items = try client.fetchItems()
-            loadError = nil
-        } catch let error as SheetClientError {
-            items = []
-            loadError = error.errorDescription
-        } catch {
-            items = []
-            loadError = "Could not load wishlist."
-        }
-        didLoad = true
     }
 }

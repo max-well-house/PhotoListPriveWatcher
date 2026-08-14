@@ -40,6 +40,9 @@ ios/**/xcuserdata/
 ios/**/*.xcuserstate
 DerivedData/
 *.xccheckout
+ios/**/SheetsConfig.plist
+ios/**/*.xcconfig
+!ios/**/*.example.xcconfig
 
 # Local secrets (service-account JSON)
 secrets/
